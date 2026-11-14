@@ -22,8 +22,6 @@ Open `index.html` in a browser. There is no build step and no server. It also wo
 
 Ticks, skipped items and view settings are saved only in your own browser (`localStorage`). Nothing is sent anywhere, and the page has no analytics. Use "Back up or restore progress" to move your progress to another browser or device.
 
-## Notes on the data
-
-Some entries come from community guides that disagree with each other. Where that is the case the entry says so. Corrections are welcome.
+## Fonts
 
 The page loads two fonts (Barlow Condensed and Public Sans) from Google Fonts. If they cannot load, it falls back to system fonts.
