@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wukong Completion Checklist</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky control header (progress, tabs, chapter chips, search) over a single column of chapter-grouped checklist rows; quest rows carry guide links. */
+:root{
+  color-scheme:light;
+  --bg:#e8ece8; --surface:#f5f7f4; --line:#c5cec6; --ink:#18201b; --dim:#55615a;
+  --accent:#86560f; --accent-ink:#ffffff; --track:#cdd5ce; --focus:#1c5fb0;
+  --c-main:#8a5a10; --c-side:#1c5f86; --c-secret:#6a3fa6; --c-quest:#1f7040; --c-miss:#b3342a; --c-other:#59615c; --c-reward:#1a6b6b; --c-trophy:#a03d7a; --c-hidden:#a8520f; --c-pill:#6a7a12; --c-gourd:#4b52b3;
+  --font-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --font-body:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1311; --surface:#171d19; --line:#2b352e; --ink:#e7eae3; --dim:#94a198;
+  --accent:#e2b865; --accent-ink:#1a1305; --track:#26302a; --focus:#7db4ee;
+  --c-main:#e2b865; --c-side:#6fb5e0; --c-secret:#b394e6; --c-quest:#6cc78e; --c-miss:#ee7a6d; --c-other:#a7b0a9; --c-reward:#5fc4c0; --c-trophy:#e08cc0; --c-hidden:#f2a35c; --c-pill:#bcd35c; --c-gourd:#9ea6f2;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1311; --surface:#171d19; --line:#2b352e; --ink:#e7eae3; --dim:#94a198;
+  --accent:#e2b865; --accent-ink:#1a1305; --track:#26302a; --focus:#7db4ee;
+  --c-main:#e2b865; --c-side:#6fb5e0; --c-secret:#b394e6; --c-quest:#6cc78e; --c-miss:#ee7a6d; --c-other:#a7b0a9; --c-reward:#5fc4c0; --c-trophy:#e08cc0; --c-hidden:#f2a35c; --c-pill:#bcd35c; --c-gourd:#9ea6f2;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--font-body)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+a{color:inherit}
+
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding-block:10px 8px}
+.title-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{margin:0;font:700 22px/1.1 var(--font-display);letter-spacing:.02em;text-transform:uppercase;text-wrap:balance}
+h1 span{color:var(--accent)}
+.pct{font:600 22px/1 var(--font-display);font-variant-numeric:tabular-nums;color:var(--accent)}
+.bar{height:6px;background:var(--track);border-radius:3px;overflow:hidden;margin:8px 0 4px}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
+.count{font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+.scroller{display:flex;gap:6px;overflow-x:auto;padding-block:3px;margin-top:6px;scrollbar-width:thin}
+.scroller>button{flex:none}
+.tab,.chip{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 11px;cursor:pointer;font-size:13px;white-space:nowrap}
+.tab{font:600 15px/1.2 var(--font-display);letter-spacing:.04em;text-transform:uppercase}
+.tab small{margin-left:6px;font:500 12px var(--font-body);color:var(--dim);font-variant-numeric:tabular-nums;letter-spacing:0}
+.tab[aria-pressed="true"],.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tab[aria-pressed="true"] small{color:inherit;opacity:.8}
+.chip{padding:3px 10px;font-size:12px}
+.filters{padding-top:10px}.tools{display:flex;gap:10px;margin-top:8px}
+.opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.opt{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:12.5px;color:var(--dim);cursor:pointer}
+.opt[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.sec{flex:1;min-width:0;display:flex;gap:8px;align-items:baseline;background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;text-align:left;cursor:pointer}
+.chev{display:inline-block;transition:transform .15s;font-size:.8em}
+.sec[aria-expanded="false"] .chev{transform:rotate(-90deg)}
+.empty button{margin-top:10px}
+.chnote{margin:8px 10px 4px;max-width:72ch;font-size:12.5px;color:var(--dim)}
+.chnote a{color:var(--accent);margin-left:8px;white-space:nowrap}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 14px}
+.cats label{display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--ink);font-size:13.5px}
+.cats input{width:16px;height:16px;accent-color:var(--accent);flex:none}
+.cats small{color:var(--dim);font-variant-numeric:tabular-nums}
+.rowtools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
+.rowtools .links{margin-top:0}
+.skipbtn{background:none;border:0;padding:2px 4px;font-size:12px;color:var(--dim);cursor:pointer;text-decoration:underline;text-underline-offset:3px;opacity:.75}
+.skipbtn:hover,.skipbtn:focus-visible{opacity:1;color:var(--ink)}
+.item.skipped{opacity:.55}.item.skipped .name{font-style:italic}
+input[type=search]{flex:1 1 200px;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px}
+.ghost{background:none;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--dim);cursor:pointer}
+.ghost:hover{color:var(--ink);border-color:var(--dim)}
+.ghost.warn{color:var(--c-miss);border-color:var(--c-miss)}
+
+main{padding-block:6px 64px}
+.note{margin:14px 0;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:6px;color:var(--dim);font-size:13px}
+.note b{color:var(--ink)}
+.refs{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--dim);margin:0 0 6px}
+.refs a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}
+details.backup{margin:8px 0 0;font-size:13px;color:var(--dim)}
+details.backup summary{cursor:pointer;width:max-content;max-width:100%}
+.backup-body{display:grid;gap:8px;margin-top:8px}
+textarea{width:100%;min-height:84px;resize:vertical;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace}
+.row-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.status{font-size:12px;color:var(--c-quest)}
+
+h2{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:26px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--line);font:600 18px/1.2 var(--font-display);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);text-wrap:balance}
+h2 span{font:500 12px var(--font-body);letter-spacing:0;text-transform:none;color:var(--dim);font-variant-numeric:tabular-nums;flex:none}
+.item{display:flex;gap:12px;padding:9px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent}
+.item:hover{background:var(--surface);border-color:var(--line)}
+.item input[type=checkbox]{flex:none;margin:3px 0 0;width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+.body{min-width:0;flex:1}
+.name{font-weight:600;overflow-wrap:anywhere}
+.desc{color:var(--dim);font-size:13.5px;max-width:72ch;overflow-wrap:anywhere}
+.item.done .name{text-decoration:line-through;color:var(--dim)}
+.item.done .desc{opacity:.65}
+.tag{display:inline-block;margin-left:8px;padding:1px 6px;vertical-align:2px;border-radius:3px;font:700 10.5px/1.5 var(--font-body);letter-spacing:.06em;color:var(--tc);background:color-mix(in srgb,var(--tc) 15%,transparent);border:1px solid color-mix(in srgb,var(--tc) 35%,transparent)}
+.t-main{--tc:var(--c-main)}.t-side{--tc:var(--c-side)}.t-secret{--tc:var(--c-secret)}
+.t-quest{--tc:var(--c-quest)}.t-miss{--tc:var(--c-miss)}.t-other{--tc:var(--c-other)}.t-reward{--tc:var(--c-reward)}.t-trophy{--tc:var(--c-trophy)}.t-hidden{--tc:var(--c-hidden)}.t-pill{--tc:var(--c-pill)}.t-gourd{--tc:var(--c-gourd)}
+.links{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.links a{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--c-quest);font-size:12px;font-weight:600;text-decoration:none}
+.links a:hover{border-color:var(--c-quest)}
+.empty{text-align:center;color:var(--dim);padding:48px 0}
+@media (max-width:560px){h1 span{display:none}}
+@media (prefers-reduced-motion:reduce){.bar>i,.chev{transition:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="title-row">
+      <h1>Black Myth: Wukong <span>Completion Checklist</span></h1>
+      <div class="pct" id="pp">0%</div>
+    </div>
+    <div class="bar" role="progressbar" aria-label="Overall completion" aria-valuemin="0" aria-valuemax="100" id="bar"><i id="pb"></i></div>
+    <div class="count" id="pt">0 / 0 completed</div>
+    <div class="scroller" id="tabs" role="group" aria-label="Category"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="filters" aria-label="Filters">
+    <div class="scroller" id="chips" role="group" aria-label="Chapter"></div>
+    <div class="tools">
+      <input type="search" id="q" placeholder="Search bosses, quests, items…  ( / )" aria-label="Search">
+    </div>
+    <div class="opts">
+      <button class="opt" type="button" id="hd" aria-pressed="false">Hide completed</button>
+      <button class="opt" type="button" id="mo" aria-pressed="false">Missable only</button>
+      <button class="opt" type="button" id="al" aria-pressed="false">Links on every item</button>
+      <button class="opt" type="button" id="sk" aria-pressed="false" hidden>Show skipped</button>
+    </div>
+  </section>
+  <div class="note">Boss counts vary by source (roughly 81–91). Chapter 5–6 story-boss order is approximate. <b>Do not</b> choose “Enter a New Cycle” after the final boss. It starts NG+ and overwrites your save. Choose <b>Continue</b> to keep free-roaming.</div>
+  <details class="backup" id="custom">
+    <summary>Customize what is tracked</summary>
+    <div class="backup-body">
+      <span>Untick a category to hide it and leave it out of your progress. You can also press Skip on a single item. Nothing is deleted, and you can turn anything back on here.</span>
+      <div class="cats" id="cats"></div>
+    </div>
+  </details>
+  <details class="backup">
+    <summary>Back up or restore progress</summary>
+    <div class="backup-body">
+      <span>Progress is saved in this browser only. Copy the text below to keep it, or paste a saved copy and press Restore to bring it back on another device.</span>
+      <textarea id="bk" aria-label="Progress backup" spellcheck="false"></textarea>
+      <div class="row-actions">
+        <button class="ghost" id="bkcopy" type="button">Copy</button>
+        <button class="ghost" id="bkload" type="button">Restore from text</button>
+        <button class="ghost" id="rs" type="button">Reset all</button>
+        <span class="status" id="bkst" role="status"></span>
+      </div>
+    </div>
+  </details>
+  <div id="list"></div>
+</main>
+
+<script>
+const CH={0:"Prologue",1:"Chapter 1 · Black Wind Mountain",2:"Chapter 2 · Yellow Wind Ridge",3:"Chapter 3 · The New West",4:"Chapter 4 · The Webbed Hollow",5:"Chapter 5 · Flaming Mountains",6:"Chapter 6 · Mount Huaguo",7:"All chapters / Endgame"};
+const TABS=[["all","All"],["main","Main Bosses"],["side","Side Bosses"],["secret","Secret Bosses"],["quest","Side Quests"],["miss","Missables"],["other","Secrets & Other"]];
+const LBL={main:"MAIN",side:"SIDE",secret:"SECRET",quest:"QUEST",miss:"MISSABLE",other:"OTHER"};
+const D=[];
+function a(cat,ch,name,note,miss){D.push({cat,ch,name,note:note||"",miss:!!miss,id:cat+"|"+ch+"|"+name})}
+
+/* ============ MAIN BOSSES ============ */
+a("main",0,"Erlang, the Sacred Divinity (tutorial)","Opening fight. Infinite health, cannot lose.");
+a("main",1,"Bullguard","Forest of Wolves > Front Hills. Unlocks Immobilize at half health.");
+a("main",1,"Guangzhi","Outside the Forest. Drops Red Tides transformation. Bell 1 is behind him.");
+a("main",1,"Lingxuzi","Forest of Wolves > Guanyin Temple. Yaoguai King.");
+a("main",1,"Whiteclad Noble","Bamboo Grove > Marsh of White Mist. Two phases. Bell 3 is past him.");
+a("main",1,"Black Wind King","Black Wind Cave > Cave Interior. Drops Cloud Step. Agate Jar curio is in a small chest on the left of the arena.");
+a("main",1,"Black Bear Guai","Black Wind Cave > Bodhi Peak. Chapter 1 end boss. Bring Fireproof Mantle + Guangmou spirit.");
+a("main",2,"King of Flowing Sands & Second Rat Prince","Sandgate Village. Kill the SMALL rat first or you lose the Second Rat Prince spirit.",true);
+a("main",2,"Tiger Vanguard","Crouching Tiger Temple > Temple Entrance. Statue in the arena opens a hatch to the Cellar (Pluck of Many).");
+a("main",2,"Yellow Wind Sage","Crouching Tiger Temple > Cellar. Chapter 2 end boss.");
+a("main",3,"Macaque Chief (1st)","Snowhill Path > Frost-Clad Path.");
+a("main",3,"Kang-Jin Loong","Snowhill Path > Mirrormere. Wind Tamer vessel (from Fuban) makes this easy.");
+a("main",3,"Captain Wise-Voice","Pagoda Realm > Mani Wheel. Kill all 9 Lantern Wardens first for the Auspicious Lantern curio.",true);
+a("main",3,"Macaque Chief (2nd)","Pagoda Realm > Warding Temple. Old Man cutscene gives Ring of Fire.");
+a("main",3,"Kang-Jin Star","Warding Temple, after the snowy slope. Unlocks Loongscale armor.");
+a("main",3,"Non-White","Valley of Ecstasy > Mindfulness Cliff. Fought twice along the path.");
+a("main",3,"Yellowbrow","Thunderclap Temple > Mahavira Hall. Three-part end boss; stock up on medicines.");
+a("main",4,"The Second Sister","Village of Lanxi > Estate of the Zhu.");
+a("main",4,"Buddha's Right Hand","Webbed Hollow > Cliff of Oblivion.");
+a("main",4,"Zhu Bajie","Webbed Hollow > Hut of Immortality. Three phases.");
+a("main",4,"Violet Spider","Webbed Hollow > The Gathering Cave. Poison – stay near full health.");
+a("main",4,"Hundred-Eyed Daoist Master","Temple of the Yellow Flower > Court of Illumination. Chapter 4 end boss. Finish Purple Altars BEFORE this.");
+a("main",5,"Brown-Iron Cart","Ashen Pass I, up the stairs past Pale-Axe Stalwart. Story. First of the story carts.");
+a("main",5,"Gray-Bronze Cart","Woods of Ember > Height of Ember. Blocks the story path. Father of Stones is found after the Height of Ember Keeper's Shrine.");
+a("main",5,"Crimson-Silver Cart","Furnace Valley > The Emerald Hall. Story. One guide also lists the Keeper of Flaming Mountains and Yin-Yang Fish at this same area.");
+a("main",5,"Fast as Wind and Quick as Fire","Story boss after Gray-Bronze Cart and before Flint Chief. Two fast attackers, so expect a lot of dodging.");
+a("main",5,"Misty Cloud and Cloudy Mist","Story boss, a double-boss encounter. Fought before the Keeper of Flaming Mountains.");
+a("main",5,"Keeper of Flaming Mountains","Do the Horse Guai cart interaction in Furnace Valley first (Dark Thunder). One guide places it, with Yin-Yang Fish, at Furnace Valley > The Emerald Hall.",true);
+a("main",5,"Yin-Yang Fish","Story boss. One guide pairs it with the Keeper of Flaming Mountains as a single entry. One guide places both at Furnace Valley > The Emerald Hall.");
+a("main",5,"Red Boy","Field of Fire > Fallen Furnace Crater, reached from the Fallen Furnace Crater Shrine. One guide lists him with the Yaksha King. His spirit can be absorbed after the fight.");
+a("main",5,"Yaksha King","Chapter 5 end boss, Field of Fire > Fallen Furnace Crater. Afterwards Princess Iron Fan gives you the Plantain Fan vessel.");
+a("main",6,"Supreme Inspector","Foothills > Verdant Path. Unlocks cloud flying for Chapter 6 secrets. The route to him is straightforward. Past the Verdant Keeper's Shrine, beating him gives the Ascension Powder formula.");
+a("main",6,"Gold Armored Rhino","Rhino Watch Slope, Foothills. The fight starts from the upper plateau on the way from the Verdant Path. Hard unless you break its horn with Focus points.");
+a("main",6,"Cloudtreading Deer","Deer Sight Forest. A tough fight. One guide suggests dealing with the other Chapter 6 bosses first.");
+a("main",6,"Feng-Tail General","Mantis-Catching Swamp. Together with Emerald-Armed Mantis it gates the route toward the Water Curtain Cave. One guide also puts it near the Rhino fight, so guides differ.");
+a("main",6,"Emerald-Armed Mantis","Mantis-Catching Swamp. Together with Feng-Tail General it gates the route toward the Water Curtain Cave.");
+a("main",6,"Stone Monkey","Heart of the Birthstone. He absorbs the five Relics and reaches full power almost at once. Beating him leads to the Great Sage's Broken Shell.");
+a("main",6,"The Great Sage's Broken Shell","FINAL BOSS. Beat for the standard ending and NG+.");
+
+/* ============ SIDE (OPTIONAL) BOSSES ============ */
+a("side",1,"Guangmou","Bamboo Grove > Snake Trail: jump off cliff on the left, turn right through bamboo. Bell 2 behind him. Gives Guangmou spirit.");
+a("side",1,"Baw-Li-Guhh-Lang (frog)","Snake Trail lower area, follow the river left to its end. Very easy.");
+a("side",1,"Wandering Wight","Outside the Forest, wandering the path. Beat him BEFORE Elder Jinchi or he despawns (returns in NG+).",true);
+a("side",2,"Lang-Li-Guhh-Baw (frog)","Sandgate Village > Village Entrance: drop into the ravine left of the shrine. Unlocks medicine crafting.");
+a("side",2,"Earth Wolf","Sandgate Village meadow. Horse Guai is tied up in the pagoda nearby.");
+a("side",2,"First Prince of Flowing Sands","Sandgate Village > Valley of Despair cave, cutscene trigger. Drops Arhat Gold Piece.");
+a("side",2,"Stone Vanguard","Fright Cliff > Rockrest Flat. Unlocks Galeguard armor. Opens the way to Windseal Gate.");
+a("side",2,"Tiger's Acolyte","Yellow Wind Formation > Windrest Hamlet bridge. Drops Old Rattle-Drum.");
+a("side",2,"Gore-Eye Daoist","Yellow Wind Formation > Windseal Gate, in front of a tree.");
+a("side",2,"Mother of Stone","Fright Cliff > Squall Hideout cave: hit 3 blue crystals on a rock. Drops Stone Essence.");
+a("side",3,"Apramana Bat","North Shore of Bitter Lake. Fight while Bajie is still with you.",true);
+a("side",3,"Captain Kalpa-Wave","Valley of Ecstasy > Longevity Road, in front of a red barrier. Captain spirit.");
+a("side",3,"Non-Able","Valley of Ecstasy > Brook of Bliss, up the slope to the right.");
+a("side",3,"Lang-Li-Guhh-Lang (ice frog)","Forest of Felicity: turn 180° from the shrine, cave on the right.");
+a("side",3,"Non-Pure","Thunderclap Temple > Temple Entrance, building right of the two colossi.");
+a("side",4,"Elder Amourworm","Webbed Hollow > Verdure Bridge, behind the 5-chest treasure room. Drops Proto Armourworm.");
+a("side",4,"Centipede Guai","Webbed Hollow > Middle Hollow, down the cliffs.");
+a("side",4,"Baw-Li-Guhh-Baw (frog)","Lower Hollow: tunnel left, squeeze through wall crack, corridor left of meditation spot.");
+a("side",4,"Commander Beetle","Temple of the Yellow Flower > Forest of Ferocity, behind the Daoists.");
+a("side",4,"Venom Daoist (1st encounter)","Pool of Shattered Jade, hanging cocoon. Destroy his 4 extra arms (attack from behind) BEFORE killing him for Venomous Armguard.",true);
+a("side",5,"Pale-Axe Stalwart","Woods of Ember > Ashen Pass I. Talk until dialogue repeats to start Five Element Carts quest.");
+a("side",5,"Flint Vanguard","Field of Fire > Fallen Furnace Crater, down the path the rolling ball cleared.");
+a("side",5,"Baw-Lang-lang (fire frog)","Cooling Slope; easy.");
+
+/* ============ SECRET BOSSES ============ */
+a("secret",1,"Elder Jinchi","Ring all 3 bells → Ancient Guanyin Temple. Reward: Fireproof Mantle (loot hanging corpse at Bell 3). Trophy: Temple of Taint.");
+a("secret",1,"The Red Loong","Needs Loong Scales (Ch2). Outside the Forest, waterfall in the left corner.");
+a("secret",2,"Mad Tiger","Old Rattle-Drum quest → jump into the well in Sandgate Village.");
+a("secret",2,"Yellow-Robed Squire","End of the Drunken Boar quest at Rockrest Flat. Reward: Snout Mask.");
+a("secret",2,"Tiger Vanguard (Lesser)","Kingdom of Sahi secret area, after Yellow-Robed Squire. Reward: Tiger Tally curio.");
+a("secret",2,"Fuban","Kingdom of Sahi > Sandgate Bound, after Lesser Tiger Vanguard. Climb his back. Reward: Wind Tamer vessel.");
+a("secret",2,"Shigandang","Place all 6 Buddha's Eyeballs on the faced rock in Stone Vanguard's arena. Reward: Skandha of Feeling.");
+a("secret",2,"Black Loong","Needs Loong Scales. Rockrest Flat, waterfall on the right path.");
+a("secret",2,"Man-in-Stone","Give Stone Essence to the thorn-trapped man in Squall Hideout. Reward: Azure Dust.");
+a("secret",3,"Captain Lotus-Vision","Upper Pagoda: drop down the cliff opposite the shrine to a prison cell.");
+a("secret",3,"Cyan Loong","Bitter Lake > Turtle Island, dragon statue at back-right of the island. Needs Loong Scales.");
+a("secret",3,"Chen Loong","End of the Chen Loong quest. Reward: Ruyi Scroll (Zodiac Village).");
+a("secret",3,"Yin Tiger","Zodiac Village blacksmith, challenge to a duel. Reward: Ebon Flow.");
+a("secret",3,"Green-Capped Martialist","End of the Treasure Hunter quest, cave near the Melon Field shrine. Reward: Spell Binder.");
+a("secret",3,"Old Ginseng Guai","Towers of Karma: Gather the plant near the stone altar.");
+a("secret",3,"Monk from the Sea","Thunderclap Temple entrance, left gate area. Reward: Hoarfrost.");
+a("secret",3,"Non-Void","End of the Fox quest (use Snow Fox Brush in fox form).");
+a("secret",3,"Erlang, the Sacred Divinity (Mount Mei)","Great Pagoda → Mei-Jian Peak. Trophy: Meet the Match.");
+a("secret",3,"The Four Heavenly Kings","Mei-Jian Peak, fought after Erlang.");
+a("secret",4,"Venom Daoist (2nd encounter)","Court of Illumination; needs the first fight done. Two phases. Opens Purple Cloud Mountain.");
+a("secret",4,"Daoist Mi","Purple Cloud Mountain > Petalfall Hamlet. Kill him BEFORE Duskveil. Reward: Violet Hail.",true);
+a("secret",4,"The Scorpionlord","Bounds of Deity's Abode. Smash his kegs to start. Kill BEFORE entering Duskveil's arena. Reward: Stained Jade Gourd.",true);
+a("secret",4,"The Duskveil","Cloudnest Peak, end of Purple Cloud Mountain. Two phases. Reward: Weaver's Needle.");
+a("secret",4,"Yellow Loong","Relief of the Fallen Loong (cross the spider-cocoon beam with Cloud Step). Needs Loong Scales AND the other 3 Loongs dead. Trophy: The Sire and Sons.");
+a("secret",4,"Fungiwoman","Court of Illumination: pull the mushroom right of the path split.");
+a("secret",5,"Flint Chief","Furnace Valley > Valley Entrance. Arena is lava; wear Fireproof Mantle.");
+a("secret",5,"Nine-Capped Lingzhi Guai","Ashen Pass III: Gather the red mushroom cluster.");
+a("secret",5,"Mother of Flamlings","Fallen Furnace Crater, past Flint Vanguard. Deliver 4 Flame Ore to the glowing spot.");
+a("secret",5,"Rusty-Gold Cart","Cooling Slope, near the frozen gate. Needs all Pale-Axe Stalwart dialogue. Opens Bishui Cave. One guide puts it at Ashen Pass III instead, and another says it can be fought after the Cooling Slope Keeper's Shrine.");
+a("secret",5,"Top Takes Bottom, Bottom Takes Top","Bishui Cave > Purge Pit (twin boss).");
+a("secret",5,"Bishui Golden-Eyed Beast","Corridor of Fire and Ice. Bring fire/ice resistance and Fireproof Mantle.");
+a("secret",6,"Poison Chief #1 & #2","Verdant Path: cloud-fly to the plateau above the shrine. Sources count 3 or 4 Poison Chiefs in the Foothills. I could only confirm #1 and #2 near the Verdant Path.");
+a("secret",6,"Jiao-Loong of Waves","Fly off the cliff edge near the shrine into the water. One guide says it is the boss closest to the Verdant Path Shrine.");
+a("secret",6,"Lang-Baw-Baw","Deep in the foothills, far corner of the map. Frog boss. One guide puts it to the left of the Gold Armored Rhino's cliff fight, which differs from the far-corner note.");
+a("secret",6,"Water-Wood Beast","Bubbling spot in the water behind the shrine (hippo-like).");
+a("secret",6,"Son of Stones","Visible on the cliff edge opposite the Jiao-Loong drop.");
+a("secret",6,"Giant Shigandang (Ch 6)","Past Son of Stones. Needs all Skandhas.");
+a("secret",7,"Erlang Shen (true ending)","Mei-Jian Peak final fight.");
+a("secret",7,"Stone Monkey + Great Sage's Broken Shell (rematch)","Return to Mount Huaguo after Erlang to see the true ending.");
+
+/* ============ SIDE QUESTS ============ */
+a("quest",1,"Shen Monkey & gourd upgrades","Kill the snake upstairs in Marsh of White Mist to free him (before Whiteclad Noble). Upgrade gourd to 9 charges for the Supreme Gourd later.");
+a("quest",1,"Three Bells → Ancient Guanyin Temple","Bell 1 behind Guangzhi; Bell 2 behind Guangmou; Bell 3 left path past Whiteclad Noble (before the big cave). Third bell teleports you to Elder Jinchi.");
+a("quest",2,"Xu Dog","Optional: beat frog Lang-Li-Guhh-Baw and talk to him. Meet him again in Crouching Tiger Temple > Cellar. Unlocks Mind Core stat trades and medicine formulas.");
+a("quest",2,"Buddha's Eyeballs","Find all 6 and place them on the faced rock in Stone Vanguard's arena. Spawns Shigandang.");
+a("quest",2,"Drunken Boar","Boar at Rockrest Flat → smash the golden keg at Windrest Bridge for Sobering Stone → return → boar at Crouching Tiger Temple, give 1 Jade Lotus → back to Rockrest Flat for Yellow-Robed Squire → Kingdom of Sahi.");
+a("quest",2,"Old Rattle-Drum","Beat Tiger's Acolyte. Use the drum at Windseal Gate, Windrest Hamlet and Sandgate Village (grey-screen spots). Jump into the well for Mad Tiger.");
+a("quest",2,"Man-in-Stone","Beat Mother of Stone → give Stone Essence to the man in thorns at Squall Hideout → fight → Azure Dust.");
+a("quest",3,"Turtle Tear","After Apramana Bat, interact with the giant skeleton, then collect the green Turtle Tear below the turtle's head (gourd soak).");
+a("quest",3,"Chen Loong quest","Multi-step line ending with the Chen Loong fight. Unlocks Zodiac Village (armor upgrades, plant growing).");
+a("quest",3,"Treasure Hunter","NPC met throughout Chapter 3. Ends with Green-Capped Martialist. Required for the true ending.");
+a("quest",3,"Fox quest","Forest of Felicity: talk to the corpse at the gate 3× for Snow Fox Brush. At Thunderclap Temple use it to become a fox, meet the monk upstairs. Non-Void fight. Reward: Snow Fox Brush curio.");
+a("quest",3,"Prisoner / Four Captains","Collect spirits of Lotus-Vision, Void-Illusion, Kalpa-Wave and Wise-Voice. Give to the prisoner in a purple-sealed Lower Pagoda cell. Reward: Chu-Bai Spearhead, Ashen Slumber transformation.");
+a("quest",4,"Venom Daoist → Purple Cloud Mountain","Beat him at Pool of Shattered Jade, then again at Court of Illumination, then interact with the wall to enter the secret area.");
+a("quest",4,"Rice Cocoons / Proto-Armourworm","Beat Elder Amourworm → give Proto Armourworm to Chen Loong → collect 3 Rice Cocoons → feed the worm one per rest. Reward: Elder Armourworm spirit.");
+a("quest",4,"Purple Altars / Letters","4 altars: Verdure Bridge village, Cliff of Oblivion shrine, Relief of the Fallen Loong cave, Court of Illumination (unlocks last). Supreme Inspector appears; hit him ~15% for the Crane Immortal entry.",true);
+a("quest",4,"Daoist Mi / Missing Bodies","Talk to the red snake at Valley of Blooms (all dialogue), then to Daoist Mi at Petalfall Hamlet. Farm yellow-robed enemies for the Violet Hail key item (random drop).",true);
+a("quest",5,"Five Element Carts (Pale-Axe Stalwart)","Carts: Brown-Iron, Gray-Bronze, Crimson-Silver (story), Horse cart (Valley Entrance lava), Rusty-Gold (Cooling Slope). Talk to the ox at all his spots, then use the frozen gate to enter Bishui Cave.");
+a("quest",7,"Horse Guai (Ma Tianba) questline","Exhaust his dialogue in every chapter 1–5: Back Hills cave; Sandgate pagoda after Earth Wolf; Thunderclap Temple balcony bridge; cocoon on the Ch4 path; cart in Furnace Valley lava. Reward: Dark Thunder, trophy Urge Unfulfilled.",true);
+a("quest",7,"Old Man questline","Once per chapter: Snake Trail (Blessed Gourd), Cellar, Warding Temple (auto), Temple of the Yellow Flower entrance, Rakshasa Palace (Supreme Gourd). Trophy: Always Accompanied.",true);
+
+/* ============ MISSABLES ============ */
+a("miss",1,"Wandering Wight spirit","Defeat Wandering Wight before Elder Jinchi. Returns in NG+.");
+a("miss",2,"Second Rat Prince spirit","Kill the small rat/King of Flowing Sands first, then the big prince.");
+a("miss",2,"Horse Guai – Sandgate Village stop","Disappears when you start Chapter 3.");
+a("miss",3,"Auspicious Lantern (curio)","Kill all 9 Lantern Wardens in Pagoda Realm (they appear when you enter frenzy) before Captain Wise-Voice.");
+a("miss",3,"Apramana Bat spirit","Defeat it while Bajie is still your companion.");
+a("miss",3,"Horse Guai – Thunderclap Temple stop","Talk to him before Chapter 4.");
+a("miss",4,"Venomous Armguard","Destroy all 4 extra arms of Venom Daoist (1st encounter) before killing him.");
+a("miss",4,"Stained Jade Gourd","Kill the Scorpionlord before the Duskveil. Entering Duskveil's arena removes him.");
+a("miss",4,"Violet Hail transformation","Kill Daoist Mi before the Duskveil. Beating Duskveil removes him.");
+a("miss",4,"Crane Immortal portrait","Finish the Purple Altars before beating the Hundred-Eyed Daoist Master.");
+a("miss",4,"Horse Guai – cocoon stop","On the main path; do not rush past.");
+a("miss",5,"Dark Thunder transformation","Interact with the Horse Guai cart in Furnace Valley and finish his dialogue. Sources differ on exact timing: do it before the Ch5 boss, then revisit after Ch5.");
+a("miss",7,"Old Man dialogue per chapter","He leaves each chapter once you advance. Needed for Always Accompanied.");
+a("miss",7,"Journal portraits","Some portraits are locked until NG+ if the boss/quest is missed. Needed for Portraits Perfected.");
+
+/* ============ SECRETS & OTHER ============ */
+a("other",1,"Secret area: Ancient Guanyin Temple","Ring 3 bells. Required for the true ending.");
+a("other",1,"Fireproof Mantle (vessel)","Loot the hanging corpse at Bell 3 after Elder Jinchi. Fire/lava resist for Black Bear Guai, Flint Chief, Bishui.");
+a("other",1,"Agate Jar (curio)","Small chest, left side of Black Wind King's arena.");
+a("other",2,"Loong Scales (key item)","Found in Chapter 2. Needed for all four Loong bosses.");
+a("other",2,"Secret area: Kingdom of Sahi","Finish the Drunken Boar quest and beat Yellow-Robed Squire.");
+a("other",3,"Secret area: Zodiac Village","Via the Chen Loong quest / Ruyi Scroll.");
+a("other",3,"Great Pagoda → Mount Mei","Complete the secret areas of Ch1–5 and the Treasure Hunter quest, then reach the Great Pagoda in Pagoda Realm (Snow-Veiled Trail). Sources differ on exact steps.");
+a("other",4,"Secret area: Purple Cloud Mountain","Beat Venom Daoist twice.");
+a("other",5,"Secret area: Bishui Cave","Complete the Five Element Carts quest.");
+a("other",5,"Supreme Gourd (10 charges)","Gourd must be at 9 charges (Shen Monkey), then interact with the fire in the Old Man's room at Rakshasa Palace.");
+a("other",6,"Skandhas (5 key items)","Take them from broken Buddha heads. All five are needed for Giant Shigandang in Ch 6.");
+a("other",6,"Secret armor set (golden chest)","After Supreme Inspector, cloud-fly to the marked mountain for a small golden chest.");
+a("other",7,"All 36 Curios","Trophy: A Curious Collection (plus one DLC curio).");
+a("other",7,"All armor sets (78 pieces)","Trophy: Mantled with Might. Many need secret-area boss materials.");
+a("other",7,"All journal portraits","Trophy: Portraits Perfected.");
+a("other",7,"Standard ending","Beat the Great Sage's Broken Shell.");
+a("other",7,"True ending","After all secret areas, Treasure Hunter quest, Erlang + Four Heavenly Kings, go back to Mount Huaguo and beat Stone Monkey + Broken Shell again.");
+a("other",7,"Final relic: Freed Mind","Rewarded for the true-ending route.");
+
+/* ============ REWARDS & TROPHIES (compiled from the notes above) ============ */
+TABS.splice(6,0,["reward","Rewards"],["trophy","Trophies"]);
+LBL.reward="REWARD";LBL.trophy="TROPHY";
+a("reward",1,"Immobilize (spell)","Bullguard, Forest of Wolves > Front Hills. Unlocks at half health.");
+a("reward",1,"Red Tides (transformation)","Dropped by Guangzhi.");
+a("reward",1,"Cloud Step (spell)","Dropped by Black Wind King.");
+a("reward",1,"Guangmou spirit","Defeat Guangmou on the Bamboo Grove side path.");
+a("reward",2,"Pluck of Many (spell)","Crouching Tiger Temple Cellar. Use the statue in Tiger Vanguard's arena to open the hatch.");
+a("reward",2,"Arhat Gold Piece","Dropped by First Prince of Flowing Sands.");
+a("reward",2,"Old Rattle-Drum","Dropped by Tiger's Acolyte. Starts the Old Rattle-Drum quest.");
+a("reward",2,"Stone Essence","Dropped by Mother of Stone. Give it to Man-in-Stone.");
+a("reward",2,"Azure Dust (transformation)","Reward for Man-in-Stone.");
+a("reward",2,"Galeguard armor","Unlocked by defeating Stone Vanguard.");
+a("reward",2,"Snout Mask","Reward for Yellow-Robed Squire.");
+a("reward",2,"Tiger Tally (curio)","Reward for Tiger Vanguard (Lesser).");
+a("reward",2,"Wind Tamer (vessel)","Reward for Fuban. Makes Kang-Jin Loong much easier.");
+a("reward",2,"Skandha of Feeling","Reward for Shigandang.");
+a("reward",3,"Ring of Fire (spell)","Old Man cutscene after Macaque Chief (2nd).");
+a("reward",3,"Loongscale armor","Unlocked by defeating Kang-Jin Star.");
+a("reward",3,"Ruyi Scroll","Reward for Chen Loong. Opens Zodiac Village.");
+a("reward",3,"Ebon Flow (transformation)","Reward for beating Yin Tiger at the Zodiac Village blacksmith.");
+a("reward",3,"Spell Binder","Reward for Green-Capped Martialist (Treasure Hunter quest).");
+a("reward",3,"Hoarfrost (transformation)","Reward for Monk from the Sea.");
+a("reward",3,"Snow Fox Brush (curio)","Fox quest. Talk to the corpse at the Forest of Felicity gate 3 times.");
+a("reward",3,"Ashen Slumber (transformation)","Reward for the Prisoner / Four Captains quest.");
+a("reward",3,"Chu-Bai Spearhead","Reward for the Prisoner / Four Captains quest.");
+a("reward",3,"Turtle Tear","Collect it below the turtle's head after Apramana Bat.");
+a("reward",4,"Proto Armourworm","Dropped by Elder Amourworm. Give it to Chen Loong to start the Rice Cocoons quest.");
+a("reward",4,"Elder Armourworm spirit","Reward for the Rice Cocoons quest.");
+a("reward",4,"Weaver's Needle","Reward for The Duskveil.");
+
+a("trophy",1,"Temple of Taint","Elder Jinchi at the Ancient Guanyin Temple.");
+a("trophy",3,"Meet the Match","Erlang, the Sacred Divinity (Mount Mei).");
+a("trophy",4,"The Sire and Sons","Defeat Yellow Loong. Needs the other three Loongs dead first.");
+a("trophy",7,"Urge Unfulfilled","Finish the Horse Guai questline.");
+a("trophy",7,"Always Accompanied","Finish the Old Man questline.");
+a("trophy",7,"A Curious Collection","Collect all 36 curios.");
+a("trophy",7,"Mantled with Might","Collect all armor sets.");
+a("trophy",7,"Portraits Perfected","Fill every journal portrait.");
+
+/* ============ HIDDEN TRICKS (boss interactions and other secrets) ============ */
+TABS.splice(5,0,["hidden","Hidden Tricks"]);
+LBL.hidden="HIDDEN";
+a("hidden",1,"Monkey by the Buddha head (Skandha of Form)","A hidden Skandha sits near a Buddha head statue where a monkey is briefly seen running away. Exact spot not confirmed in the guides I found, so use the Guide link.");
+a("hidden",2,"Make Shigandang fight Stone Vanguard","Place all 6 Buddha's Eyeballs on the faced rock in Stone Vanguard's arena BEFORE you defeat Stone Vanguard. Shigandang wakes up and the two bosses fight each other. Shigandang usually wins but is left weakened, and you finish it yourself. You can also stand back and watch. Guides don't say whether you still get Stone Vanguard's own rewards, so check your Galeguard armor afterwards.");
+a("hidden",4,"Make The Duskveil fight the Scorpionlord","Walk straight into The Duskveil's arena without killing the Scorpionlord first. He joins your side, and Duskveil beats him, which leaves Duskveil weaker for you. Trade-off: once he dies you can't fight him, so you lose his reward. Do Daoist Mi and the Scorpionlord first if you want those rewards.",true);
+a("reward",5,"Plantain Fan (vessel)","Princess Iron Fan hands it over after you defeat the Yaksha King. Not missable. You can equip it from Chapter 6. It lifts enemies into the air.");
+
+/* ============ PILLS & GOURD ITEMS (compiled from guide search results; see notes on each row) ============ */
+TABS.splice(-1,0,["pill","Pills"],["gourd","Gourd Items"]);
+LBL.pill="PILL";LBL.gourd="GOURD";
+
+/* --- Celestial Pills: Jade Lotus = Health, Taiyi = Mana, Nonary = Stamina --- */
+a("pill",1,"Celestial Jade Lotus Pill – Guanyin Temple","Health pill. Forest of Wolves, at the Guanyin Temple.");
+a("pill",1,"Celestial Taiyi Pill – Marsh of White Mist","Mana pill. Bamboo Grove, Marsh of White Mist. One guide puts this one inside Black Wind Cave instead.");
+a("pill",1,"Celestial Nonary Pill – Black Wind Cave","Stamina pill. Outside the cave in Black Wind Cave.");
+a("pill",2,"Celestial Nonary Pill – Valley of Despair","Stamina pill. Valley of Despair, Sandgate Village.");
+a("pill",2,"Celestial Taiyi Pill – Rock Clash Platform","Mana pill. Fright Cliff, at the Rock Clash Platform.");
+a("pill",2,"Celestial Jade Lotus Pill – Crouching Tiger Temple","Health pill. Crouching Tiger Temple, at the Temple Entrance.");
+a("pill",3,"Celestial Taiyi Pill – Outside the Wheel","Mana pill. Pagoda Realm, Outside the Wheel.");
+a("pill",3,"Celestial Jade Lotus Pill – Turtle Island","Health pill. Bitter Lake, on Turtle Island.");
+a("pill",3,"Celestial Nonary Pill – New Thunderclap Temple","Stamina pill. At the New Thunderclap Temple entrance. One guide puts it in a pond.");
+a("pill",4,"Celestial Taiyi Pill – Cliff of Oblivion","Mana pill. Webbed Hollow, Cliff of Oblivion. Guides list only this one for Chapter 4 and I could not confirm the others, so check the Guide link.");
+a("pill",5,"Celestial Taiyi Pill – Rakshasa Palace","Mana pill. Furnace Valley, Rakshasa Palace.");
+a("pill",5,"Celestial Nonary Pill – Purge Pit","Stamina pill. Bishui Cave secret area, Purge Pit.");
+a("pill",6,"Chapter 6 Celestial Pill","One guide lists a pill in this chapter but gives no location. Check the Guide link.");
+a("pill",7,"Five Skandha's Pill","Bring all five Skandha key items to Xu Dog and he crafts it. It raises health, mana and stamina together.");
+
+/* --- Medicine formulas (14 total; trophy Page Preserver) --- */
+a("pill",2,"Formula: Longevity Decoction","Buy from Xu Dog at the start of Chapter 2.");
+a("pill",3,"Formula: Tonifying Decoction","Buy from Xu Dog at the start of Chapter 3.");
+a("pill",4,"Formula: Essence Decoction","One guide files it under Chapter 4. Exact source not confirmed.");
+a("pill",5,"Formula: Aura Amplification Pellets","Buy from Xu Dog at the start of Chapter 5.");
+a("pill",5,"Formula: Septenary Heartfire Pill","In the world, close to the first Keeper's Shrine in Bishui Cave.");
+a("pill",6,"Formula: Ascension Powder","Defeat the Supreme Inspector, past the Verdant Keeper's Shrine.");
+a("pill",7,"Formula: Soul Remigration Pill","New Game+ only. Buy it from Xu Dog's shop in NG+.");
+a("pill",7,"Formula: the other seven (14 in total)","Guides count 14 formulas in all. I could not confirm the other seven. Check Xu Dog's shop each chapter and use the Guide link.");
+
+/* --- Awaken Wine Worms (guides count 12 and disagree on a few spots) --- */
+a("gourd",1,"Awaken Wine Worm – Black Wind Cave","In a glowing pot on the left side of the Black Wind King arena. Grab it after the fight.");
+a("gourd",2,"Awaken Wine Worm – First Prince's cave","Behind a wooden structure in the cave where you fight the First Prince of Flowing Sands, to the right of the Valley of Despair shrine.");
+a("gourd",3,"Awaken Wine Worm – Pagoda Realm","Near the Mani Wheel in the Pagoda Realm. One guide says a golden keg on the Pagoda Realm path.");
+a("gourd",3,"Awaken Wine Worm – Longevity Road","Valley of Ecstasy, in a barrel along Longevity Road.");
+a("gourd",3,"Awaken Wine Worm – Shen Monkey (Chapter 3)","Sold by Shen Monkey when Chapter 3 begins. Guides disagree on how many worms he sells in total.");
+a("gourd",4,"Awaken Wine Worm – Temple of the Yellow Flower","At the Temple of the Yellow Flower entrance.");
+a("gourd",4,"Awaken Wine Worm – Second Sister's house","In the house where you fight the Second Sister.");
+a("gourd",4,"Awaken Wine Worm – Petalfall Hamlet","Purple Cloud Mountain secret area, at the Petalfall Hamlet shrine.");
+a("gourd",5,"Awaken Wine Worm – Corridor of Fire and Ice","Bishui Cave secret area, at the Corridor of Fire and Ice shrine.");
+a("gourd",5,"Awaken Wine Worm – Rakshasa Palace","Inside the temple at Rakshasa Palace, along the back wall.");
+a("gourd",7,"Awaken Wine Worms: the rest (12 in total)","Guides count 12 but disagree on some spots and on how many Shen Monkey sells. Tick this once your in-game count reaches 12.");
+
+/* --- Luojia Fragrant Vines (guides count 14 or 15) --- */
+a("gourd",1,"Luojia Fragrant Vine – Marsh of White Mist","Hanging from a bamboo tree right beside the Marsh of White Mist shrine.");
+a("gourd",2,"Luojia Fragrant Vine – Windrest Bridge","Near Windrest Bridge, after defeating Tiger Vanguard and clearing the hamlet.");
+a("gourd",2,"Luojia Fragrant Vine – Windseal Gate","On the path past Windseal Gate, guarded by the Gore-Eye Daoist.");
+a("gourd",3,"Luojia Fragrant Vine – Shen Monkey (Chapter 3)","Sold by Shen Monkey when Chapter 3 begins.");
+a("gourd",3,"Luojia Fragrant Vine – Outside the Wheel","Pagoda Realm. Climb the stairs from the shrine and follow the path to the end of the cave. The vine is on a tree behind a rock.");
+a("gourd",3,"Luojia Fragrant Vine – Snowy cliff edge","On a tree at a cliff edge, defended by two Bat Yaoguai. Take the road away from the Builder enemy and climb the steps.");
+a("gourd",3,"Luojia Fragrant Vine – North Shore of Bitter Lake","Named in one guide without directions. Check the Guide link.");
+a("gourd",3,"Luojia Fragrant Vine – Longevity Road","Named in one guide without directions. Check the Guide link.");
+a("gourd",4,"Luojia Fragrant Vine – Middle Hollow","In the middle of the settlement in the Middle Hollow, guarded by a scorpion enemy.");
+a("gourd",4,"Luojia Fragrant Vine – Mountain Trail Shrine","Just before the Mountain Trail Shrine in the Temple of the Yellow Flower area.");
+a("gourd",4,"Luojia Fragrant Vine – Purple Cloud Mountain","Secret area. On the bank of the pond.");
+a("gourd",4,"Luojia Fragrant Vine – Shen Monkey (Chapter 4)","Sold by Shen Monkey after the start of Chapter 4.");
+a("gourd",5,"Luojia Fragrant Vine – boss arena","At the far end of an arena. Run around the arena after the boss. Which arena is not confirmed.");
+a("gourd",5,"Luojia Fragrant Vine – Shen Monkey (Chapter 5)","Sold by Shen Monkey in Chapter 5. Sources differ on whether the world has one or two vines here.");
+
+/* --- Special gourds, drinks and soaks --- */
+a("gourd",2,"Plaguebane Gourd","Halves your healing but briefly boosts attack. Sources disagree: the Old Rattle-Drum quest, or a black chest after Mad Tiger.");
+a("gourd",6,"Multi-Glazed Gourd","Sold by Shen Monkey once you reach Chapter 6.");
+a("gourd",7,"Qing-Tian Gourd","Unlocked by collecting all journal portraits.");
+a("gourd",2,"Lambrew","Drink or soak ingredient. Near the bridge in front of the spawn point.");
+a("gourd",2,"Laurel Buds","Drink or soak ingredient. In Sandgate Village.");
+a("gourd",3,"Tender Jade Lotus","Drink or soak ingredient. Near the Brook of Bliss checkpoint.");
+a("gourd",3,"Thunderbolt Horn","Drink or soak ingredient. Sold by the gourd monkey (Shen Monkey).");
+a("gourd",4,"Goji Shoots","Drink or soak ingredient. On the path of the main quest.");
+a("gourd",4,"Secret-area soak (after The Duskveil)","A soak you get in Purple Cloud Mountain after beating The Duskveil. Name not confirmed.");
+a("gourd",7,"Remaining drinks and soaks","One guide counts 9 drinks and 26 soaks, another counts 27 soaks. Shen Monkey sells more as you progress. Chapter 6 has none.");
+
+a("trophy",7,"Page Preserver","Collect all 14 medicine formulas.");
+
+/* ============ CHAPTER 5 AND 6 BOSS NOTES ============ */
+a("side",5,"Father of Stones","Listed after the Height of Ember Keeper's Shrine in one guide's Chapter 5 order. My sources do not say whether it is optional, so check the Guide link.");
+
+/* ============ LINKS ============ */
+/* Quest, Hidden Tricks, Pills and Gourd Items rows always get a Guide and a Video link. Turn on "Links on every item" to get them everywhere.
+   To point an item at an exact page, add it here: LINKS["Xu Dog"]="https://...". */
+const LINKS={};
+const GUIDE_WORD={quest:"side quest guide",main:"boss guide",side:"boss guide",secret:"secret boss guide",reward:"how to get",hidden:"hidden trick",pill:"location",gourd:"location",trophy:"trophy guide",miss:"missable guide",other:"guide"};
+function cleanName(n){return n.replace(/\([^)]*\)/g," ").replace(/[→\/&]/g," ").replace(/\s+/g," ").trim()}
+function guideUrl(x){return LINKS[x.name]||"https://www.google.com/search?q="+encodeURIComponent("Black Myth Wukong "+cleanName(x.name)+" "+(GUIDE_WORD[x.cat]||"guide"))}
+function videoUrl(x){return "https://www.youtube.com/results?search_query="+encodeURIComponent("Black Myth Wukong "+cleanName(x.name)+" walkthrough")}
+
+/* ============ CHAPTER NOTES (shown under the chapter heading on boss tabs) ============ */
+const CHN={
+  5:{t:"Guides count 17 to 19 bosses in Chapter 5 (one guide: 19, with 15 optional). Story path, approximately: Brown-Iron Cart, Gray-Bronze Cart, Crimson-Silver Cart, Fast as Wind and Quick as Fire, Misty Cloud and Cloudy Mist, Keeper of Flaming Mountains with Yin-Yang Fish, then Red Boy and Yaksha King.",
+     l:[]},
+  6:{t:"One guide counts 13 bosses in Chapter 6, 7 of them optional. Another guide counts 19. The Supreme Inspector comes first, then Stone Monkey and the Broken Shell come last. Guides disagree on the order of the four bosses in between.",
+     l:[]}
+};
+const CHN_TABS=["all","main","side","secret"];
+
+/* ============ STATE ============ */
+const KEY="bmw-wukong-checklist-v1"; // same key and item ids as the original page
+const UKEY="bmw-wukong-ui-v1";
+let S={},U={};
+try{const r=JSON.parse(localStorage.getItem(KEY)||"{}");if(r&&typeof r==="object"&&!Array.isArray(r))S=r}catch(e){}
+try{const r=JSON.parse(localStorage.getItem(UKEY)||"{}");if(r&&typeof r==="object"&&!Array.isArray(r))U=r}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function saveUI(){try{localStorage.setItem(UKEY,JSON.stringify({tab,chap,hide,missOnly,allLinks,collapsed,off,showSkip}))}catch(e){}}
+let tab=TABS.some(t=>t[0]===U.tab)?U.tab:"all";
+let chap=(U.chap==="all"||(U.chap!=null&&String(U.chap) in CH))?String(U.chap):"all";
+let hide=!!U.hide,missOnly=!!U.missOnly,allLinks=!!U.allLinks,collapsed=(U.collapsed&&typeof U.collapsed==="object")?U.collapsed:{};
+let qs="";
+let showSkip=!!U.showSkip;
+const off={};if(U.off&&typeof U.off==="object")for(const k of Object.keys(U.off))if(U.off[k]&&TABS.some(t=>t[0]===k&&k!=="all"))off[k]=true;
+if(off[tab])tab="all";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ============ RENDER ============ */
+const isDone=x=>S[x.id]===true, isSkip=x=>S[x.id]==="skip";
+const tracked=x=>!off[x.cat]&&!isSkip(x);   // counts toward progress
+function buildCats(){
+  $("cats").innerHTML=TABS.filter(t=>t[0]!=="all").map(([k,l])=>`<label for="cat-${k}"><input type="checkbox" id="cat-${k}" data-cat="${k}" ${off[k]?"":"checked"}>${l} <small>${D.filter(x=>x.cat===k).length}</small></label>`).join("");
+}
+function buildTabs(){
+  $("tabs").innerHTML=TABS.filter(([k])=>k==="all"||!off[k]).map(([k,l])=>{
+    const t=D.filter(x=>(k==="all"||x.cat===k)&&tracked(x)),d=t.filter(isDone).length;
+    return `<button class="tab" type="button" data-k="${k}" aria-pressed="${tab===k}">${l}<small>${d}/${t.length}</small></button>`}).join("");
+  const chips=[["all","All chapters"]].concat(Object.keys(CH).map(k=>[k,k==0?"Prologue":k==7?"Endgame":"Ch "+k]));
+  $("chips").innerHTML=chips.map(([k,l])=>`<button class="chip" type="button" data-c="${k}" aria-pressed="${String(chap)===String(k)}">${l}</button>`).join("");
+  $("hd").setAttribute("aria-pressed",hide);$("mo").setAttribute("aria-pressed",missOnly);$("al").setAttribute("aria-pressed",allLinks);
+  const ns=D.filter(x=>isSkip(x)&&!off[x.cat]).length;
+  $("sk").hidden=!ns&&!showSkip;$("sk").textContent="Show skipped ("+ns+")";$("sk").setAttribute("aria-pressed",showSkip);
+}
+function rowHtml(x,i){
+  const sk=isSkip(x),showLinks=allLinks||x.cat==="quest"||x.cat==="hidden"||x.cat==="pill"||x.cat==="gourd";
+  const links=showLinks?`<div class="links"><a href="${esc(guideUrl(x))}" target="_blank" rel="noopener noreferrer">Guide ↗</a><a href="${esc(videoUrl(x))}" target="_blank" rel="noopener noreferrer">Video ↗</a></div>`:"";
+  const skipBtn=`<button class="skipbtn" type="button" data-skip="${i}" aria-label="${sk?"Restore":"Skip"} ${esc(x.name)}">${sk?"Restore":"Skip"}</button>`;
+  return `<div class="item ${isDone(x)?"done":""} ${sk?"skipped":""}" data-i="${i}">
+    <input type="checkbox" id="cb${i}" aria-label="${esc(x.name)}" ${isDone(x)?"checked":""} ${sk?"disabled":""}>
+    <div class="body"><div class="name">${esc(x.name)}<span class="tag t-${x.cat}">${LBL[x.cat]}</span>${x.miss&&x.cat!=="miss"?'<span class="tag t-miss">MISSABLE</span>':""}${sk?'<span class="tag t-other">SKIPPED</span>':""}</div>
+    <div class="desc">${esc(x.note)}</div><div class="rowtools">${links}${skipBtn}</div></div></div>`;
+}
+function render(focusSel){
+  const act=D.filter(tracked),tot=act.length,done=act.filter(isDone).length,pct=tot?Math.round(done/tot*100):0;
+  $("pb").style.width=(tot?done/tot*100:0)+"%";$("bar").setAttribute("aria-valuenow",pct);
+  $("pt").textContent=done+" / "+tot+" completed";$("pp").textContent=pct+"%";
+  buildTabs();
+  const items=D.map((x,i)=>({x,i})).filter(({x})=>!off[x.cat]&&(showSkip||!isSkip(x))
+    &&(tab==="all"||x.cat===tab)&&(chap==="all"||String(x.ch)===String(chap))
+    &&(!hide||!isDone(x))&&(!missOnly||x.miss||x.cat==="miss")&&(!qs||(x.name+" "+x.note).toLowerCase().includes(qs)));
+  if(!items.length){
+    $("list").innerHTML='<div class="empty">Nothing matches these filters.<br><button class="ghost" type="button" id="clr">Clear filters</button></div>';
+  }else{
+    let html="";
+    for(const c of Object.keys(CH)){
+      const g=items.filter(({x})=>String(x.ch)===c);if(!g.length)continue;
+      const cnt=g.filter(({x})=>!isSkip(x)),gd=cnt.filter(({x})=>isDone(x)).length,open=qs||!collapsed[c];
+      html+=`<h2><button class="sec" type="button" data-ch="${c}" aria-expanded="${!!open}"><span class="chev" aria-hidden="true">▾</span>${esc(CH[c])}</button><span>${gd}/${cnt.length}</span></h2>`;
+      if(open&&!qs&&CHN[c]&&CHN_TABS.includes(tab))html+=`<p class="chnote">${esc(CHN[c].t)}${CHN[c].l.map(([n,u])=>`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${n} ↗</a>`).join("")}</p>`;
+      if(open)html+=g.map(({x,i})=>rowHtml(x,i)).join("");
+    }
+    $("list").innerHTML=html;
+  }
+  if(focusSel){const f=document.querySelector(focusSel);if(f)f.focus({preventScroll:true})}
+}
+function toggle(i){
+  const id=D[i].id;if(S[id]===true)delete S[id];else S[id]=true;save();render("#cb"+i);refreshBackup();
+}
+function setSkip(i){
+  const id=D[i].id;if(S[id]==="skip")delete S[id];else S[id]="skip";save();render();refreshBackup();
+}
+
+/* ============ EVENTS ============ */
+document.addEventListener("click",e=>{
+  const t=e.target.closest(".tab");if(t){tab=t.dataset.k;saveUI();render('.tab[data-k="'+tab+'"]');return}
+  const c=e.target.closest(".chip");if(c){chap=c.dataset.c;saveUI();render('.chip[data-c="'+chap+'"]');return}
+  const s=e.target.closest(".sec");if(s){const k=s.dataset.ch;collapsed[k]=!collapsed[k];if(!collapsed[k])delete collapsed[k];saveUI();render('.sec[data-ch="'+k+'"]');return}
+  const sb=e.target.closest(".skipbtn");if(sb){setSkip(+sb.dataset.skip);return}
+  if(e.target.closest("#clr")){qs="";$("q").value="";chap="all";hide=false;missOnly=false;saveUI();render();return}
+  if(e.target.closest("a")||e.target.closest("button"))return;
+  const it=e.target.closest(".item");
+  if(it){e.preventDefault();toggle(+it.dataset.i)}
+});
+$("q").addEventListener("input",e=>{qs=e.target.value.trim().toLowerCase();render()});
+$("hd").addEventListener("click",()=>{hide=!hide;saveUI();render("#hd")});
+$("mo").addEventListener("click",()=>{missOnly=!missOnly;saveUI();render("#mo")});
+$("al").addEventListener("click",()=>{allLinks=!allLinks;saveUI();render("#al")});
+$("sk").addEventListener("click",()=>{showSkip=!showSkip;saveUI();render("#sk")});
+$("cats").addEventListener("change",e=>{
+  const k=e.target.dataset.cat;if(!k)return;
+  if(e.target.checked)delete off[k];else off[k]=true;
+  if(off[tab])tab="all";saveUI();render();
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="/"&&!/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)){e.preventDefault();$("q").focus()}
+  else if(e.key==="Escape"&&document.activeElement===$("q")){$("q").value="";qs="";render();$("q").blur()}
+});
+
+/* ---- backup / restore / reset ---- */
+function refreshBackup(){$("bk").value=JSON.stringify(S)}
+function say(m){$("bkst").textContent=m;setTimeout(()=>{if($("bkst").textContent===m)$("bkst").textContent=""},3500)}
+$("bkcopy").addEventListener("click",()=>{
+  const ta=$("bk");ta.select();
+  (navigator.clipboard?navigator.clipboard.writeText(ta.value):Promise.reject()).then(()=>say("Copied."),()=>say("Press Ctrl/Cmd+C to copy the selected text."));
+});
+$("bkload").addEventListener("click",()=>{
+  try{
+    const r=JSON.parse($("bk").value),valid=new Set(D.map(x=>x.id));let n=0,next={};
+    if(!r||typeof r!=="object"||Array.isArray(r))throw 0;
+    for(const k of Object.keys(r))if((r[k]===true||r[k]==="skip")&&valid.has(k)){next[k]=r[k];if(r[k]===true)n++}
+    S=next;save();render();say("Restored "+n+" completed items.");
+  }catch(e){say("That text is not a valid backup.")}
+});
+let armed=0;
+$("rs").addEventListener("click",e=>{
+  const b=e.currentTarget;
+  if(!armed){armed=setTimeout(()=>{armed=0;b.textContent="Reset all";b.classList.remove("warn")},4000);b.textContent="Click again to clear all progress";b.classList.add("warn");return}
+  clearTimeout(armed);armed=0;b.textContent="Reset all";b.classList.remove("warn");S={};save();render();refreshBackup();say("Progress cleared.");
+});
+buildCats();refreshBackup();render();
+</script>
+
+</body>
+</html>
